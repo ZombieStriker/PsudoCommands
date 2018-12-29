@@ -1,8 +1,6 @@
 package me.zombie_striker.psudocommands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
@@ -74,58 +72,68 @@ public class CommandUtils {
 				if (good) {
 					ents[0] = (Entity) sender;
 				}
+			} else {
+
 			}
 			return ents;
 		} else if (arg.startsWith("@a")) {
-			if (loc != null) {
-				// ents = new Entity[maxEnts];
-				List<Entity> listOfValidEntities = new ArrayList<>();
-				int C = Integer.MAX_VALUE;
-				if (hasTag(SelectorType.C, arg))
-					for (String s : getTags(arg)) {
-						if (hasTag(SelectorType.C, s)) {
-							C = getInt(s);
-							break;
-						}
-					}
-				World world3 = null;
-
-				for (World w : getAcceptedWorlds(loc, arg)) {
-					List<Entity> ea = w.getEntities();
-					for (int i = 0; i < w.getEntities().size(); i++) {
-						if (world3 == null || !world3.equals(w)) {
-							world3 = w;
-						}
-						if (listOfValidEntities.size() >= C)
-							break;
-						Entity e = ea.get(i);
-						boolean good = true;
-						for (int b = 0; b < getTags(arg).length; b++) {
-							if (!canBeAccepted(getTags(arg)[b], e, loc)) {
-								good = false;
-								break;
-							}
-						}
-						if (good) {
-							listOfValidEntities.add(e);
-						}
+			// ents = new Entity[maxEnts];
+			List<Entity> listOfValidEntities = new ArrayList<>();
+			int C = Integer.MAX_VALUE;
+			if (hasTag(SelectorType.C, arg))
+				for (String s : getTags(arg)) {
+					if (hasTag(SelectorType.C, s)) {
+						C = getInt(s);
+						break;
 					}
 				}
-				ents = listOfValidEntities.toArray(new Entity[listOfValidEntities.size()]);
+			World world3 = null;
+			boolean usePlayers = true;
+			for (String tag : getTags(arg)) {
+				if (hasTag(SelectorType.TYPE, tag)) {
+					usePlayers = false;
+					break;
+				}
 			}
+			for (World w : getAcceptedWorldsFullString(loc, arg)) {
+				List<Entity> ea = usePlayers ? new ArrayList<Entity>(w.getPlayers()) : w.getEntities();
+				for (Entity e : ea) {
+					if (world3 == null || !world3.equals(w)) {
+						world3 = w;
+					}
+					if (listOfValidEntities.size() >= C)
+						break;
+					boolean good = true;
+					for (int b = 0; b < getTags(arg).length; b++) {
+						if (!canBeAccepted(getTags(arg)[b], e, loc)) {
+							good = false;
+							break;
+						}
+					}
+					if (good) {
+						listOfValidEntities.add(e);
+					}
+				}
+			}
+			ents = listOfValidEntities.toArray(new Entity[listOfValidEntities.size()]);
+
 		} else if (arg.startsWith("@p")) {
 			ents = new Entity[1];
 			double closestInt = Double.MAX_VALUE;
 			Entity closest = null;
-			for (World w : getAcceptedWorlds(loc, arg)) {
+
+			for (World w : getAcceptedWorldsFullString(loc, arg)) {
 				for (Player e : w.getPlayers()) {
 					if (e == sender)
 						continue;
-					double distance = e.getLocation().distanceSquared(loc);
+					Location temp = loc;
+					if (temp == null)
+						temp = e.getWorld().getSpawnLocation();
+					double distance = e.getLocation().distanceSquared(temp);
 					if (closestInt > distance) {
 						boolean good = true;
 						for (String tag : getTags(arg)) {
-							if (!canBeAccepted(tag, e, loc)) {
+							if (!canBeAccepted(tag, e, temp)) {
 								good = false;
 								break;
 							}
@@ -141,26 +149,26 @@ public class CommandUtils {
 		} else if (arg.startsWith("@e")) {
 			// ents = new Entity[1];
 			List<Entity> entities = new ArrayList<Entity>();
-			// for (World w : getAcceptedWorlds(loc, arg)) {
-			for (Entity e : loc.getWorld().getEntities()) {
-				if (e == sender)
-					continue;
-				boolean good = true;
-				for (String tag : getTags(arg)) {
-					if (!canBeAccepted(tag, e, loc)) {
-						good = false;
-						break;
+			for (World w : getAcceptedWorldsFullString(loc, arg)) {
+				for (Entity e : w.getEntities()) {
+					if (e == sender)
+						continue;
+					boolean good = true;
+					for (String tag : getTags(arg)) {
+						if (!canBeAccepted(tag, e, loc)) {
+							good = false;
+							break;
+						}
+					}
+					if (good) {
+						// Location check = e.getLocation();
+						// if (check.getWorld() != loc.getWorld()) {
+						// continue;
+						// }
+						entities.add(e);
 					}
 				}
-				if (good) {
-					// Location check = e.getLocation();
-					// if (check.getWorld() != loc.getWorld()) {
-					// continue;
-					// }
-					entities.add(e);
-				}
 			}
-			// }
 			// ents[0] = closest;
 			ents = entities.toArray(new Entity[entities.size()]);
 		} else if (arg.startsWith("@r")) {
@@ -396,7 +404,7 @@ public class CommandUtils {
 	}
 
 	private static World getW(String arg) {
-		return Bukkit.getWorld(arg.replace("!", "").split("=")[1]);
+		return Bukkit.getWorld(getString(arg)/* arg.replace("!", "").split("=")[1] */);
 	}
 
 	private static String getScoreMinName(String arg) {
@@ -437,7 +445,27 @@ public class CommandUtils {
 		return null;
 	}
 
-	private static List<World> getAcceptedWorlds(Location loc, String string) {
+	private static List<World> getAcceptedWorldsFullString(Location loc, String fullString) {
+		String string = null;
+		for (String tag : getTags(fullString)) {
+			if (hasTag(SelectorType.World, tag)) {
+				string = tag;
+				break;
+			}
+		}
+		if (string == null) {
+			List<World> worlds = new ArrayList<World>();
+			if (loc == null || loc.getWorld() == null) {
+				worlds.addAll(Bukkit.getWorlds());
+			} else {
+				worlds.add(loc.getWorld());
+			}
+			return worlds;
+		}
+		return getAcceptedWorlds(string);
+	}
+
+	private static List<World> getAcceptedWorlds(String string) {
 		List<World> worlds = new ArrayList<World>(Bukkit.getWorlds());
 		if (isInverted(string)) {
 			worlds.remove(getW(string));
@@ -623,7 +651,7 @@ public class CommandUtils {
 	private static boolean isW(String arg, Location loc, Entity e) {
 		if (getW(arg) == null) {
 			return true;
-		} else if ((isInverted(arg) != getAcceptedWorlds(loc, arg).contains(getW(arg))))
+		} else if ((isInverted(arg) != getAcceptedWorlds(arg).contains(getW(arg))))
 			return true;
 		return false;
 	}

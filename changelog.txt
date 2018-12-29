@@ -1,3 +1,9 @@
+1.0.8
+	Fixed @p, @e, and @a errors.
+	Fixed @p and @e commands so that they accept mutliple worlds
+	Fixed @a so that it selects player by default, and entities only when a type is specified.
+	Fixed console sender when issuing distance checks. If the console sends @p, it will now check distance relative to the center of the world the player is in.
+
 1.0.7
 	Added "tag=" support
 	Added "scores=" support

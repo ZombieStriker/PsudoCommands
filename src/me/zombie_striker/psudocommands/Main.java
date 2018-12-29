@@ -71,6 +71,8 @@ public class Main extends JavaPlugin {
 						}
 					} else if (args[i].startsWith("@")) {
 						Entity[] e = CommandUtils.getTargets(issue, args[i]);
+						if(e==null)
+							continue;
 						boolean works = true;
 						for (int j = 1; j < e.length; j++) {
 							StringBuilder sb = new StringBuilder(cmd.toString());
