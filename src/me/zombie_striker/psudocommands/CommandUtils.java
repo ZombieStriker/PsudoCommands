@@ -87,7 +87,6 @@ public class CommandUtils {
 						break;
 					}
 				}
-			World world3 = null;
 			boolean usePlayers = true;
 			for (String tag : getTags(arg)) {
 				if (hasTag(SelectorType.TYPE, tag)) {
@@ -95,29 +94,33 @@ public class CommandUtils {
 					break;
 				}
 			}
-			for (World w : getAcceptedWorldsFullString(loc, arg)) {
-				List<Entity> ea = usePlayers ? new ArrayList<Entity>(w.getPlayers()) : w.getEntities();
-				for (Entity e : ea) {
-					if (world3 == null || !world3.equals(w)) {
-						world3 = w;
-					}
-					if (listOfValidEntities.size() >= C)
-						break;
-					boolean good = true;
-					for (int b = 0; b < getTags(arg).length; b++) {
-						if (!canBeAccepted(getTags(arg)[b], e, loc)) {
-							good = false;
-							break;
-						}
-					}
-					if (good) {
-						listOfValidEntities.add(e);
-					}
+			List<Entity> ea = new ArrayList<Entity>(Bukkit.getOnlinePlayers());
+			if (!usePlayers) {
+				ea.clear();
+				for (World w : getAcceptedWorldsFullString(loc, arg)) {
+					ea.addAll(w.getEntities());
 				}
 			}
+			for (Entity e : ea) {
+				if (listOfValidEntities.size() >= C)
+					break;
+				boolean good = true;
+				for (int b = 0; b < getTags(arg).length; b++) {
+					if (!canBeAccepted(getTags(arg)[b], e, loc)) {
+						good = false;
+						break;
+					}
+				}
+				if (good) {
+					listOfValidEntities.add(e);
+				}
+			}
+
 			ents = listOfValidEntities.toArray(new Entity[listOfValidEntities.size()]);
 
-		} else if (arg.startsWith("@p")) {
+		} else if (arg.startsWith("@p"))
+
+		{
 			ents = new Entity[1];
 			double closestInt = Double.MAX_VALUE;
 			Entity closest = null;
@@ -547,14 +550,14 @@ public class CommandUtils {
 	private static boolean isScoreWithin(String arg, Entity e) {
 		if (!(e instanceof Player))
 			return false;
-		String[] scores = arg.split("{")[1].split("}")[0].split(",");
+		String[] scores = arg.split("\\{")[1].split("\\}")[0].split(",");
 		for (int i = 0; i < scores.length; i++) {
 			String[] s = scores[i].split("=");
 			String name = s[0];
 
 			for (Objective o : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 				if (o.getName().equalsIgnoreCase(name)) {
-					if (!isWithinIntValue(arg, o.getScore(e.getName()).getScore()))
+					if (!isWithinIntValue(isInverted(arg),s[1], o.getScore(e.getName()).getScore()))
 						return false;
 				}
 			}
@@ -854,8 +857,7 @@ public class CommandUtils {
 		return (value > mult) != inverted;
 	}
 
-	private static boolean isWithinIntValue(String arg, double value) {
-		boolean inverted = isInverted(arg);
+	private static boolean isWithinIntValue(boolean inverted, String arg, double value) {
 		double min = -Double.MAX_VALUE;
 		double max = Double.MAX_VALUE;
 		if (arg.contains("..")) {
@@ -868,7 +870,7 @@ public class CommandUtils {
 			}
 			return (value <= max * max && min * min <= value) != inverted;
 		} else {
-			double mult = Double.parseDouble(arg.split("=")[1]);
+			double mult = Double.parseDouble(arg);
 			return (value == mult) != inverted;
 		}
 	}

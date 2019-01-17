@@ -1,3 +1,9 @@
+1.0.9
+	Fixed scores= syntax.
+
+1.0.8b
+	Fixed @a so that it grabs all players on the server.
+
 1.0.8
 	Fixed @p, @e, and @a errors.
 	Fixed @p and @e commands so that they accept mutliple worlds
