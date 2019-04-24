@@ -37,7 +37,7 @@ public class CommandUtils {
 	 * 
 	 *    Currently supports the selectors: [type=] [r=] [rm=] [c=] [w=] [m=]
 	 *    [name=] [l=] [lm=] [h=] [hm=] [rx=] [rxm=] [ry=] [rym=] [team=]
-	 *    [score_---=] [score_---_min=]
+	 *    [score_---=] [score_---_min=] [x] [y] [z]
 	 * 
 	 *    All selectors can be inverted.
 	 * 
@@ -59,12 +59,25 @@ public class CommandUtils {
 		} else if (sender instanceof CommandMinecart) {
 			loc = ((CommandMinecart) sender).getLocation();
 		}
+		String[] tags = getTags(arg);
+
+		// prefab fix
+		for (String s : tags) {
+			if (hasTag(SelectorType.X, s)) {
+				loc.setX(getInt(s));
+			} else if (hasTag(SelectorType.Y, s)) {
+				loc.setY(getInt(s));
+			} else if (hasTag(SelectorType.Z, s)) {
+				loc.setZ(getInt(s));
+			}
+		}
+
 		if (arg.startsWith("@s")) {
 			ents = new Entity[1];
 			if (sender instanceof Player) {
 				boolean good = true;
-				for (int b = 0; b < getTags(arg).length; b++) {
-					if (!canBeAccepted(getTags(arg)[b], (Entity) sender, loc)) {
+				for (int b = 0; b < tags.length; b++) {
+					if (!canBeAccepted(tags[b], (Entity) sender, loc)) {
 						good = false;
 						break;
 					}
@@ -81,14 +94,14 @@ public class CommandUtils {
 			List<Entity> listOfValidEntities = new ArrayList<>();
 			int C = Integer.MAX_VALUE;
 			if (hasTag(SelectorType.C, arg))
-				for (String s : getTags(arg)) {
+				for (String s : tags) {
 					if (hasTag(SelectorType.C, s)) {
 						C = getInt(s);
 						break;
 					}
 				}
 			boolean usePlayers = true;
-			for (String tag : getTags(arg)) {
+			for (String tag : tags) {
 				if (hasTag(SelectorType.TYPE, tag)) {
 					usePlayers = false;
 					break;
@@ -105,8 +118,8 @@ public class CommandUtils {
 				if (listOfValidEntities.size() >= C)
 					break;
 				boolean good = true;
-				for (int b = 0; b < getTags(arg).length; b++) {
-					if (!canBeAccepted(getTags(arg)[b], e, loc)) {
+				for (int b = 0; b < tags.length; b++) {
+					if (!canBeAccepted(tags[b], e, loc)) {
 						good = false;
 						break;
 					}
@@ -135,7 +148,7 @@ public class CommandUtils {
 					double distance = e.getLocation().distanceSquared(temp);
 					if (closestInt > distance) {
 						boolean good = true;
-						for (String tag : getTags(arg)) {
+						for (String tag : tags) {
 							if (!canBeAccepted(tag, e, temp)) {
 								good = false;
 								break;
@@ -157,7 +170,7 @@ public class CommandUtils {
 					if (e == sender)
 						continue;
 					boolean good = true;
-					for (String tag : getTags(arg)) {
+					for (String tag : tags) {
 						if (!canBeAccepted(tag, e, loc)) {
 							good = false;
 							break;
@@ -184,7 +197,7 @@ public class CommandUtils {
 				if (hasTag(SelectorType.TYPE, arg)) {
 					Entity e = loc.getWorld().getEntities().get(r.nextInt(loc.getWorld().getEntities().size()));
 					boolean good = true;
-					for (String tag : getTags(arg)) {
+					for (String tag : tags) {
 						if (!canBeAccepted(tag, e, loc)) {
 							good = false;
 							break;
@@ -196,7 +209,7 @@ public class CommandUtils {
 					List<Player> onl = new ArrayList<Player>(Bukkit.getOnlinePlayers());
 					Entity e = onl.get(r.nextInt(onl.size()));
 					boolean good = true;
-					for (String tag : getTags(arg)) {
+					for (String tag : tags) {
 						if (!canBeAccepted(tag, e, loc)) {
 							good = false;
 							break;
@@ -328,6 +341,12 @@ public class CommandUtils {
 		if (hasTag(SelectorType.World, arg) && isW(arg, loc, e))
 			return true;
 		if (hasTag(SelectorType.R, arg) && isR(arg, loc, e))
+			return true;
+		if (hasTag(SelectorType.X, arg))
+			return true;
+		if (hasTag(SelectorType.Y, arg))
+			return true;
+		if (hasTag(SelectorType.Z, arg))
 			return true;
 		return false;
 	}
@@ -557,7 +576,7 @@ public class CommandUtils {
 
 			for (Objective o : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 				if (o.getName().equalsIgnoreCase(name)) {
-					if (!isWithinIntValue(isInverted(arg),s[1], o.getScore(e.getName()).getScore()))
+					if (!isWithinIntValue(isInverted(arg), s[1], o.getScore(e.getName()).getScore()))
 						return false;
 				}
 			}
@@ -882,8 +901,8 @@ public class CommandUtils {
 	enum SelectorType {
 		LEVEL("level="), DISTANCE("distance="), TYPE("type="), NAME("name="), TEAM("team="), LMax("lm="), L(
 				"l="), World("w="), m("m="), C("c="), HM("hm="), H("h="), RM("rm="), RYM("rym="), RX("rx="), SCORE_FULL(
-						"score="), SCORE_MIN(
-								"score_min"), SCORE_13("scores="), R("r="), RXM("rxm="), RY("ry="), TAG("tag=")
+						"score="), SCORE_MIN("score_min"), SCORE_13(
+								"scores="), R("r="), RXM("rxm="), RY("ry="), TAG("tag="), X("x="), Y("y="), Z("z=")
 
 		;
 		String name;
