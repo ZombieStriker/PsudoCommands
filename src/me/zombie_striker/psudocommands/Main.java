@@ -41,9 +41,12 @@ public class Main extends JavaPlugin {
 					senders[0] = Bukkit.getConsoleSender();
 				else if (args[0].contains("@")) {
 					senders = CommandUtils.getTargets(sender, args[0]);
-				} else
-					senders[0] = Bukkit.getPlayer(args[0]);
-			}else {
+				} else {
+					@SuppressWarnings("deprecation") /* Not storing player */
+					Player tmp = Bukkit.getPlayer(args[0]);
+					senders[0] = tmp;
+				}
+			} else {
 				senders[0]=sender;
 			}
 			if (senders[0] == null) {
