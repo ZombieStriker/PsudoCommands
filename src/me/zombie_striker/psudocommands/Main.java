@@ -84,6 +84,9 @@ public class Main extends JavaPlugin {
 								break;
 							}
 							sb.append((e[j].getCustomName() != null ? e[j].getCustomName() : e[j].getName()));
+							if (i + 1 < args.length) {
+								sb.append(" ");
+							}
 							temps.add(sb);
 						}
 						if (!works)
@@ -96,7 +99,9 @@ public class Main extends JavaPlugin {
 					} else {
 						cmd.append(args[i]);
 					}
-					cmd.append(" ");
+					if (i + 1 < args.length) {
+						cmd.append(" ");
+					}
 				}
 				if (temps.size() > 0) {
 					cmds.addAll(temps);
