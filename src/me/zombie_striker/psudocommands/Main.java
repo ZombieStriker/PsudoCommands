@@ -50,7 +50,7 @@ public class Main extends JavaPlugin {
 				senders[0]=sender;
 			}
 			if (senders[0] == null) {
-				sender.sendMessage("The sender is null. Chose a valid player or \"Console\"");
+				sender.sendMessage("The sender is null. Choose a valid player or \"Console\"");
 				return true;
 			}
 			for (CommandSender issue :senders) {
