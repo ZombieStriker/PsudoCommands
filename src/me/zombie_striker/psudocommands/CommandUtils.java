@@ -222,7 +222,9 @@ public class CommandUtils {
 			ents[0] = entity;
 		} else {
 			ents = new Entity[1];
-			ents[0] = Bukkit.getPlayer(arg);
+			@SuppressWarnings("deprecation") /* Not storing player */
+			Player tmp = Bukkit.getPlayer(arg);
+			ents[0] = tmp;
 		}
 		return ents;
 	}

@@ -41,13 +41,16 @@ public class Main extends JavaPlugin {
 					senders[0] = Bukkit.getConsoleSender();
 				else if (args[0].contains("@")) {
 					senders = CommandUtils.getTargets(sender, args[0]);
-				} else
-					senders[0] = Bukkit.getPlayer(args[0]);
-			}else {
+				} else {
+					@SuppressWarnings("deprecation") /* Not storing player */
+					Player tmp = Bukkit.getPlayer(args[0]);
+					senders[0] = tmp;
+				}
+			} else {
 				senders[0]=sender;
 			}
 			if (senders[0] == null) {
-				sender.sendMessage("The sender is null. Chose a valid player or \"Console\"");
+				sender.sendMessage("The sender is null. Choose a valid player or \"Console\"");
 				return true;
 			}
 			for (CommandSender issue :senders) {
@@ -81,6 +84,9 @@ public class Main extends JavaPlugin {
 								break;
 							}
 							sb.append((e[j].getCustomName() != null ? e[j].getCustomName() : e[j].getName()));
+							if (i + 1 < args.length) {
+								sb.append(" ");
+							}
 							temps.add(sb);
 						}
 						if (!works)
@@ -93,7 +99,9 @@ public class Main extends JavaPlugin {
 					} else {
 						cmd.append(args[i]);
 					}
-					cmd.append(" ");
+					if (i + 1 < args.length) {
+						cmd.append(" ");
+					}
 				}
 				if (temps.size() > 0) {
 					cmds.addAll(temps);
