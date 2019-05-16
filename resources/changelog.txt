@@ -1,0 +1,59 @@
+1.0.11
+	Fixed spaces for names(From C4K3)
+	Updated to 1.14.
+	Updated to Maven
+
+1.0.10
+	Added x=, y=, and z= targets to change the location of where the command is sent.
+
+1.0.9
+	Fixed scores= syntax.
+
+1.0.8b
+	Fixed @a so that it grabs all players on the server.
+
+1.0.8
+	Fixed @p, @e, and @a errors.
+	Fixed @p and @e commands so that they accept mutliple worlds
+	Fixed @a so that it selects player by default, and entities only when a type is specified.
+	Fixed console sender when issuing distance checks. If the console sends @p, it will now check distance relative to the center of the world the player is in.
+
+1.0.7
+	Added "tag=" support
+	Added "scores=" support
+	Fixed more selectors to support .. sections
+	Fixed issue where some selectors would override others, breaking valid commands
+	Cleaned up code.
+
+1.0.6
+	Added "level=" support
+	Added "distance=" support
+	Added support for ".." syntax.
+	Stopped command from being sent if selector is invalid
+	Fixed problem where, with /psudoas, if the target is not there, "null" would be put instead of just canceling the command
+	Fixed @a and @e for psudoas so a command can be sent by multiple players	
+
+1.0.5
+	Added @s support
+
+1.0.4
+	Fixed issue where command blocks are not centered.
+	TODO: Make ^ work correctly and not use ~ code
+
+1.0.3
+	Fixed issue where commands would reference the instance of the player, not the player's name
+	Fixed issue where custom name is not provided
+	Fixed issue where worlds would not be checked for @e
+	Fixed issue where mutliple commands (if needed) would not run. Now, commands like /psudo say @p will print out all of the player's names on the server
+	Fixed where tags could fail/ find a single-other entity instead of finding all valid entities
+
+1.0.2
+	Fixed /psudo
+	Fixed AOOB.
+	Added more help messages
+
+1.0.1
+	Fixed ~ for referening the sender
+
+1.0.0
+init
