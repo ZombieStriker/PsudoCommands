@@ -22,30 +22,27 @@ public class CommandUtils {
 	/**
 	 * Use this if you are unsure if a player provided the "@a" tag. This will allow
 	 * multiple entities to be retrieved.
-	 * 
+	 * <p>
 	 * This can return a null variable if no tags are included, or if a value for a
 	 * tag does not exist (I.e if the tag [type=___] contains an entity that does
 	 * not exist in the specified world)
-	 * 
+	 * <p>
 	 * The may also be empty or null values at the end of the array. Once a null
 	 * value has been reached, you do not need to loop through any of the higher
 	 * indexes
-	 * 
+	 * <p>
 	 * Currently supports the tags:
-	 * 
-	 * @p , @a , @e , @r
-	 * 
-	 *    Currently supports the selectors: [type=] [r=] [rm=] [c=] [w=] [m=]
-	 *    [name=] [l=] [lm=] [h=] [hm=] [rx=] [rxm=] [ry=] [rym=] [team=]
-	 *    [score_---=] [score_---_min=] [x] [y] [z]
-	 * 
-	 *    All selectors can be inverted.
-	 * 
-	 * @param The
-	 *            command sender
-	 * @param The
-	 *            argument to test for
+	 *
+	 * @param arg    the argument that we are testing for
+	 * @param sender the sender of the command
 	 * @return The entities that match the criteria
+	 * @p , @a , @e , @r
+	 * <p>
+	 * Currently supports the selectors: [type=] [r=] [rm=] [c=] [w=] [m=]
+	 * [name=] [l=] [lm=] [h=] [hm=] [rx=] [rxm=] [ry=] [rym=] [team=]
+	 * [score_---=] [score_---_min=] [x] [y] [z] [limit=]
+	 * <p>
+	 * All selectors can be inverted.
 	 */
 	public static Entity[] getTargets(CommandSender sender, String arg) {
 		Entity[] ents = null;
@@ -92,14 +89,8 @@ public class CommandUtils {
 		} else if (arg.startsWith("@a")) {
 			// ents = new Entity[maxEnts];
 			List<Entity> listOfValidEntities = new ArrayList<>();
-			int C = Integer.MAX_VALUE;
-			if (hasTag(SelectorType.C, arg))
-				for (String s : tags) {
-					if (hasTag(SelectorType.C, s)) {
-						C = getInt(s);
-						break;
-					}
-				}
+			int C = getLimit(arg);
+
 			boolean usePlayers = true;
 			for (String tag : tags) {
 				if (hasTag(SelectorType.TYPE, tag)) {
@@ -117,23 +108,21 @@ public class CommandUtils {
 			for (Entity e : ea) {
 				if (listOfValidEntities.size() >= C)
 					break;
-				boolean good = true;
+				boolean isValid = true;
 				for (int b = 0; b < tags.length; b++) {
 					if (!canBeAccepted(tags[b], e, loc)) {
-						good = false;
+						isValid = false;
 						break;
 					}
 				}
-				if (good) {
+				if (isValid) {
 					listOfValidEntities.add(e);
 				}
 			}
 
 			ents = listOfValidEntities.toArray(new Entity[listOfValidEntities.size()]);
 
-		} else if (arg.startsWith("@p"))
-
-		{
+		} else if (arg.startsWith("@p")) {
 			ents = new Entity[1];
 			double closestInt = Double.MAX_VALUE;
 			Entity closest = null;
@@ -163,67 +152,64 @@ public class CommandUtils {
 			}
 			ents[0] = closest;
 		} else if (arg.startsWith("@e")) {
-			// ents = new Entity[1];
 			List<Entity> entities = new ArrayList<Entity>();
+			int C = getLimit(arg);
 			for (World w : getAcceptedWorldsFullString(loc, arg)) {
 				for (Entity e : w.getEntities()) {
+					if (entities.size() > C)
+						break;
 					if (e == sender)
 						continue;
-					boolean good = true;
+					boolean valid = true;
 					for (String tag : tags) {
 						if (!canBeAccepted(tag, e, loc)) {
-							good = false;
+							valid = false;
 							break;
 						}
 					}
-					if (good) {
-						// Location check = e.getLocation();
-						// if (check.getWorld() != loc.getWorld()) {
-						// continue;
-						// }
+					if (valid) {
 						entities.add(e);
 					}
 				}
 			}
-			// ents[0] = closest;
 			ents = entities.toArray(new Entity[entities.size()]);
 		} else if (arg.startsWith("@r")) {
 			Random r = ThreadLocalRandom.current();
 			ents = new Entity[1];
-			Entity entity = null;
-			int tries = 0;
-			while (entity == null && tries < 100) {
-				tries++;
+
+			List<Entity> validEntities = new ArrayList<>();
+			for (World w : getAcceptedWorldsFullString(loc, arg)) {
 				if (hasTag(SelectorType.TYPE, arg)) {
-					Entity e = loc.getWorld().getEntities().get(r.nextInt(loc.getWorld().getEntities().size()));
-					boolean good = true;
-					for (String tag : tags) {
-						if (!canBeAccepted(tag, e, loc)) {
-							good = false;
-							break;
+					for (Entity e : w.getEntities()) {
+						boolean good = true;
+						for (String tag : tags) {
+							if (!canBeAccepted(tag, e, loc)) {
+								good = false;
+								break;
+							}
 						}
+						if (good)
+							validEntities.add(e);
 					}
-					if (good)
-						entity = e;
 				} else {
-					List<Player> onl = new ArrayList<Player>(Bukkit.getOnlinePlayers());
-					Entity e = onl.get(r.nextInt(onl.size()));
-					boolean good = true;
-					for (String tag : tags) {
-						if (!canBeAccepted(tag, e, loc)) {
-							good = false;
-							break;
+					for (Entity e : Bukkit.getOnlinePlayers()) {
+						boolean good = true;
+						for (String tag : tags) {
+							if (!canBeAccepted(tag, e, loc)) {
+								good = false;
+								break;
+							}
 						}
+						if (good)
+							validEntities.add(e);
 					}
-					if (good)
-						entity = e;
 				}
 			}
-			ents[0] = entity;
+			ents[0] = validEntities.get(r.nextInt(validEntities.size()));
 		} else {
 			ents = new Entity[1];
 			@SuppressWarnings("deprecation") /* Not storing player */
-			Player tmp = Bukkit.getPlayer(arg);
+					Player tmp = Bukkit.getPlayer(arg);
 			ents[0] = tmp;
 		}
 		return ents;
@@ -232,15 +218,13 @@ public class CommandUtils {
 	/**
 	 * Returns one entity. Use this if you know the player will not provide the '@a'
 	 * tag.
-	 * 
+	 * <p>
 	 * This can return a null variable if no tags are included, or if a value for a
 	 * tag does not exist (I.e if the tag [type=___] contains an entity that does
 	 * not exist in the specified world)
-	 * 
-	 * @param Who
-	 *            sent the command
-	 * @param The
-	 *            argument
+	 *
+	 * @param sender the command sender
+	 * @param arg    the argument of the target
 	 * @return The first entity retrieved.
 	 */
 	public static Entity getTarget(CommandSender sender, String arg) {
@@ -252,33 +236,29 @@ public class CommandUtils {
 
 	/**
 	 * Returns an integer. Use this to support "~" by providing what it will mean.
-	 * 
+	 * <p>
 	 * E.g. rel="x" when ~ should be turn into the entity's X coord.
-	 * 
+	 * <p>
 	 * Currently supports "x", "y" and "z".
-	 * 
-	 * 
-	 * @param The
-	 *            argument
-	 * @param What
-	 *            the int should represent
-	 * @param The
-	 *            entity to get the relative int from.
+	 *
+	 * @param arg The target
+	 * @param rel relative to the X,Y, or Z
+	 * @param e   The entity to check relative to.
 	 * @return the int
 	 */
 	public static int getIntRelative(String arg, String rel, Entity e) {
 		int relInt = 0;
 		if (arg.startsWith("~")) {
 			switch (rel.toLowerCase()) {
-			case "x":
-				relInt = e.getLocation().getBlockX();
-				break;
-			case "y":
-				relInt = e.getLocation().getBlockY();
-				break;
-			case "z":
-				relInt = e.getLocation().getBlockZ();
-				break;
+				case "x":
+					relInt = e.getLocation().getBlockX();
+					break;
+				case "y":
+					relInt = e.getLocation().getBlockY();
+					break;
+				case "z":
+					relInt = e.getLocation().getBlockZ();
+					break;
 			}
 			return mathIt(arg, relInt);
 		} else if (arg.startsWith("^")) {
@@ -286,15 +266,15 @@ public class CommandUtils {
 			// entity relative to what its looking at.
 
 			switch (rel.toLowerCase()) {
-			case "x":
-				relInt = e.getLocation().getBlockX();
-				break;
-			case "y":
-				relInt = e.getLocation().getBlockY();
-				break;
-			case "z":
-				relInt = e.getLocation().getBlockZ();
-				break;
+				case "x":
+					relInt = e.getLocation().getBlockX();
+					break;
+				case "y":
+					relInt = e.getLocation().getBlockY();
+					break;
+				case "z":
+					relInt = e.getLocation().getBlockZ();
+					break;
 			}
 			return mathIt(arg, relInt);
 		}
@@ -369,22 +349,22 @@ public class CommandUtils {
 			if (arg.charAt(i) == '+' || arg.charAt(i) == '-' || arg.charAt(i) == '*' || arg.charAt(i) == '/') {
 				try {
 					switch (mode) {
-					case 0:
-						total = total + Integer.parseInt(intString);
-						break;
-					case 1:
-						total = total - Integer.parseInt(intString);
-						break;
-					case 2:
-						total = total * Integer.parseInt(intString);
-						break;
-					case 3:
-						total = total / Integer.parseInt(intString);
-						break;
+						case 0:
+							total = total + Integer.parseInt(intString);
+							break;
+						case 1:
+							total = total - Integer.parseInt(intString);
+							break;
+						case 2:
+							total = total * Integer.parseInt(intString);
+							break;
+						case 3:
+							total = total / Integer.parseInt(intString);
+							break;
 					}
 					mode = (short) ((arg.charAt(i) == '+') ? 0
 							: ((arg.charAt(i) == '-') ? 1
-									: ((arg.charAt(i) == '*') ? 2 : ((arg.charAt(i) == '/') ? 3 : -1))));
+							: ((arg.charAt(i) == '*') ? 2 : ((arg.charAt(i) == '/') ? 3 : -1))));
 				} catch (Exception e) {
 					Bukkit.getLogger().severe("There has been an issue with a plugin using the CommandUtils class!");
 				}
@@ -392,18 +372,18 @@ public class CommandUtils {
 			} else if (args.length() == i || arg.charAt(i) == ' ' || arg.charAt(i) == ',' || arg.charAt(i) == ']') {
 				try {
 					switch (mode) {
-					case 0:
-						total = total + Integer.parseInt(intString);
-						break;
-					case 1:
-						total = total - Integer.parseInt(intString);
-						break;
-					case 2:
-						total = total * Integer.parseInt(intString);
-						break;
-					case 3:
-						total = total / Integer.parseInt(intString);
-						break;
+						case 0:
+							total = total + Integer.parseInt(intString);
+							break;
+						case 1:
+							total = total - Integer.parseInt(intString);
+							break;
+						case 2:
+							total = total * Integer.parseInt(intString);
+							break;
+						case 3:
+							total = total / Integer.parseInt(intString);
+							break;
 					}
 				} catch (Exception e) {
 					Bukkit.getLogger().severe("There has been an issue with a plugin using the CommandUtils class!");
@@ -414,6 +394,22 @@ public class CommandUtils {
 			}
 		}
 		return total;
+	}
+
+	private static int getLimit(String arg) {
+		if (hasTag(SelectorType.LIMIT, arg))
+			for (String s : getTags(arg)) {
+				if (hasTag(SelectorType.LIMIT, s)) {
+					return getInt(s);
+				}
+			}
+		if (hasTag(SelectorType.C, arg))
+			for (String s : getTags(arg)) {
+				if (hasTag(SelectorType.C, s)) {
+					return getInt(s);
+				}
+			}
+		return Integer.MAX_VALUE;
 	}
 
 	private static String getType(String arg) {
@@ -699,156 +695,6 @@ public class CommandUtils {
 
 	}
 
-	/*
-	 * private static boolean hasR(String arg) { return
-	 * arg.toLowerCase().startsWith("r="); }
-	 * 
-	 * private static boolean hasScoreMin(String arg) { boolean startW =
-	 * arg.startsWith("score_"); if (!startW) return false; String[] split =
-	 * arg.split("="); if (split[0].endsWith("_min")) return true; return false; }
-	 * 
-	 * private static boolean hasScore(String arg) { boolean startW =
-	 * arg.startsWith("score_"); if (!startW) return false; String[] split =
-	 * arg.split("="); if (!split[0].endsWith("_min")) return true; return false; }
-	 * 
-	 * private static boolean hasRX(String arg) { return
-	 * arg.toLowerCase().startsWith("rx="); }
-	 * 
-	 * private static boolean hasRXM(String arg) { return
-	 * arg.toLowerCase().startsWith("rxm="); }
-	 * 
-	 * private static boolean hasRY(String arg) { return
-	 * arg.toLowerCase().startsWith("ry="); }
-	 * 
-	 * private static boolean hasRYM(String arg) { return
-	 * arg.toLowerCase().startsWith("rym="); }
-	 * 
-	 * private static boolean hasRM(String arg) { return
-	 * arg.toLowerCase().startsWith("rm="); }
-	 * 
-	 * private static boolean hasH(String arg) { return
-	 * arg.toLowerCase().startsWith("h="); }
-	 * 
-	 * private static boolean hasHM(String arg) { return
-	 * arg.toLowerCase().startsWith("hm="); }
-	 * 
-	 * private static boolean hasC(String arg) { return
-	 * arg.toLowerCase().startsWith("c="); }
-	 * 
-	 * private static boolean hasM(String arg) { return
-	 * arg.toLowerCase().startsWith("m="); }
-	 * 
-	 * private static boolean hasW(String arg) { return
-	 * arg.toLowerCase().startsWith("w="); }
-	 * 
-	 * private static boolean hasL(String arg) { return
-	 * arg.toLowerCase().startsWith("l="); }
-	 * 
-	 * private static boolean hasLM(String arg) { return
-	 * arg.toLowerCase().startsWith("lm="); }
-	 * 
-	 * private static boolean hasName(String arg) { return
-	 * arg.toLowerCase().startsWith("name="); }
-	 * 
-	 * private static boolean hasTeam(String arg) { return
-	 * (arg.toLowerCase().startsWith("team=")); }
-	 * 
-	 * private static boolean hasType(String arg) { return
-	 * arg.toLowerCase().startsWith("type="); }
-	 * 
-	 * private static boolean hasDistance(String arg) { return
-	 * arg.toLowerCase().startsWith("distance="); }
-	 * 
-	 * private static boolean hasLevel(String arg) { return
-	 * arg.toLowerCase().startsWith("level="); }
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * private static int getC(String arg) { return getInt(arg); if (!hasC(arg))
-	 * return Integer.MAX_VALUE; return
-	 * Integer.parseInt(arg.toLowerCase().replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getR(String arg) { if (!hasR(arg)) return
-	 * Integer.MAX_VALUE; return Integer.parseInt(arg.toLowerCase().replace("!",
-	 * "").split("=")[1]); }
-	 * 
-	 * private static int getRM(String arg) { if (!hasRM(arg)) return 1; return
-	 * Integer.parseInt(arg.toLowerCase().replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getRX(String arg) { if (!hasRX(arg)) return
-	 * -Integer.MAX_VALUE; return Integer.parseInt(arg.toLowerCase().replace("!",
-	 * "").split("=")[1]); }
-	 * 
-	 * private static int getRXM(String arg) { if (!hasRXM(arg)) return -8; return
-	 * Integer.parseInt(arg.toLowerCase().replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getRY(String arg) { if (!hasRY(arg)) return
-	 * -Integer.MAX_VALUE; return Integer.parseInt(arg.toLowerCase().replace("!",
-	 * "").split("=")[1]); }
-	 * 
-	 * private static int getRYM(String arg) { if (!hasRYM(arg)) return -8; return
-	 * Integer.parseInt(arg.toLowerCase().replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getH(String arg) { if (!hasH(arg)) return -1; return
-	 * Integer.parseInt(arg.toLowerCase().replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getHM(String arg) { if (!hasHM(arg)) return
-	 * Integer.MAX_VALUE; return Integer.parseInt(arg.toLowerCase().replace("!",
-	 * "").split("=")[1]); }
-	 * 
-	 * private static int getL(String arg) { if (!hasL(arg)) return -1; return
-	 * Integer.parseInt(arg.toLowerCase().replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getLM(String arg) { if (!hasLM(arg)) return
-	 * Integer.MAX_VALUE; return Integer.parseInt(arg.toLowerCase().replace("!",
-	 * "").split("=")[1]); }
-	 * 
-	 * private static String getName(String arg) { String reparg = arg.replace(" ",
-	 * "_"); if (!hasName(reparg)) return null; return reparg.replace("!",
-	 * "").split("=")[1]; }
-	 * 
-	 * private static World getW(String arg) { if (!hasW(arg)) return null; return
-	 * Bukkit.getWorld(arg.replace("!", "").split("=")[1]); }
-	 * 
-	 * private static String getScoreMinName(String arg) { if (!hasScoreMin(arg))
-	 * return null; return arg.split("=")[0].substring(0, arg.split("=")[0].length()
-	 * - 1 - 4).replace("score_", ""); }
-	 * 
-	 * private static String getScoreName(String arg) { if (!hasScore(arg)) return
-	 * null; return arg.split("=")[0].replace("score_", ""); }
-	 * 
-	 * private static String getTeam(String arg) { if (!hasTeam(arg)) return null;
-	 * return arg.toLowerCase().replace("!", "").split("=")[1]; }
-	 * 
-	 * private static int getScoreMin(String arg) { if (!hasScoreMin(arg)) return
-	 * -8; return Integer.parseInt(arg.replace("!", "").split("=")[1]); }
-	 * 
-	 * private static int getScore(String arg) { if (!hasScore(arg)) return
-	 * Integer.MAX_VALUE; return Integer.parseInt(arg.replace("!",
-	 * "").split("=")[1]); }
-	 * 
-	 * private static GameMode getM(String arg) { if (!hasM(arg)) return null;
-	 * String[] split = arg.replace("!", "").toLowerCase().split("="); String
-	 * returnType = split[1]; if (returnType.equalsIgnoreCase("0") ||
-	 * returnType.equalsIgnoreCase("s") || returnType.equalsIgnoreCase("survival"))
-	 * return GameMode.SURVIVAL; if (returnType.equalsIgnoreCase("1") ||
-	 * returnType.equalsIgnoreCase("c") || returnType.equalsIgnoreCase("creative"))
-	 * return GameMode.CREATIVE; if (returnType.equalsIgnoreCase("2") ||
-	 * returnType.equalsIgnoreCase("a") || returnType.equalsIgnoreCase("adventure"))
-	 * return GameMode.ADVENTURE; if (returnType.equalsIgnoreCase("3") ||
-	 * returnType.equalsIgnoreCase("sp") ||
-	 * returnType.equalsIgnoreCase("spectator")) return GameMode.SPECTATOR; return
-	 * null; }
-	 * 
-	 * private static List<World> getAcceptedWorlds(Location loc, String string) {
-	 * List<World> worlds = new ArrayList<World>(Bukkit.getWorlds()); if
-	 * (!hasW(string)) { } else if (isInverted(string)) {
-	 * worlds.remove(getW(string)); } else { worlds.clear();
-	 * worlds.add(getW(string)); } return worlds; }
-	 */
-
 	private static boolean isInverted(String arg) {
 		return arg.toLowerCase().split("!").length != 1;
 	}
@@ -903,10 +749,8 @@ public class CommandUtils {
 	enum SelectorType {
 		LEVEL("level="), DISTANCE("distance="), TYPE("type="), NAME("name="), TEAM("team="), LMax("lm="), L(
 				"l="), World("w="), m("m="), C("c="), HM("hm="), H("h="), RM("rm="), RYM("rym="), RX("rx="), SCORE_FULL(
-						"score="), SCORE_MIN("score_min"), SCORE_13(
-								"scores="), R("r="), RXM("rxm="), RY("ry="), TAG("tag="), X("x="), Y("y="), Z("z=")
-
-		;
+				"score="), SCORE_MIN("score_min"), SCORE_13(
+				"scores="), R("r="), RXM("rxm="), RY("ry="), TAG("tag="), X("x="), Y("y="), Z("z="), LIMIT("limit=");
 		String name;
 
 		SelectorType(String s) {
