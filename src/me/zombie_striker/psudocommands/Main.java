@@ -1,8 +1,5 @@
 package me.zombie_striker.psudocommands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -10,6 +7,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main extends JavaPlugin {
 
@@ -42,9 +42,7 @@ public class Main extends JavaPlugin {
 				else if (args[0].contains("@")) {
 					senders = CommandUtils.getTargets(sender, args[0]);
 				} else {
-					@SuppressWarnings("deprecation") /* Not storing player */
-							Player tmp = Bukkit.getPlayer(args[0]);
-					senders[0] = tmp;
+					senders[0] = Bukkit.getPlayer(args[0]);
 				}
 			} else {
 				senders[0] = sender;
@@ -55,7 +53,7 @@ public class Main extends JavaPlugin {
 			}
 			for (CommandSender issue : senders) {
 				int coordCounter = 0;
-				List<StringBuilder> cmds = new ArrayList<StringBuilder>();
+				List<StringBuilder> cmds = new ArrayList<>();
 				cmds.add(new StringBuilder());
 				for (int i = (psudoAs ? 1 : 0); i < args.length; i++) {
 					List<StringBuilder> temps = new ArrayList<>();
@@ -110,7 +108,8 @@ public class Main extends JavaPlugin {
 				}
 				boolean atleastOne = false;
 				for (StringBuilder cmd : cmds) {
-					if (Bukkit.dispatchCommand(issue, cmd.toString())) atleastOne = true;
+					if (Bukkit.dispatchCommand(issue, cmd.toString()))
+						atleastOne = true;
 				}
 				return atleastOne;
 			}

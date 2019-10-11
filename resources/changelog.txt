@@ -1,3 +1,7 @@
+1.0.13
+    Added [x_rotation] and [y_rotation]
+    Optimized code
+
 1.0.12
     Fixed returns for command blocks
     Added [limit=] checks

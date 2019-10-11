@@ -1,8 +1,5 @@
 package me.zombie_striker.psudocommands;
 
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -16,6 +13,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Team;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class CommandUtils {
 
@@ -40,19 +42,18 @@ public class CommandUtils {
 	 * <p>
 	 * Currently supports the selectors: [type=] [r=] [rm=] [c=] [w=] [m=]
 	 * [name=] [l=] [lm=] [h=] [hm=] [rx=] [rxm=] [ry=] [rym=] [team=]
-	 * [score_---=] [score_---_min=] [x] [y] [z] [limit=]
+	 * [score_---=] [score_---_min=] [x] [y] [z] [limit=] [x_rotation] [y_rotation]
 	 * <p>
 	 * All selectors can be inverted.
 	 */
 	public static Entity[] getTargets(CommandSender sender, String arg) {
-		Entity[] ents = null;
+		Entity[] ents;
 		Location loc = null;
 		if (sender instanceof Player) {
 			loc = ((Player) sender).getLocation();
 		} else if (sender instanceof BlockCommandSender) {
-			loc = ((BlockCommandSender) sender).getBlock().getLocation();
-			// Tempfix
-			loc.add(0.5, 0, 0.5);
+			// Center of block.
+			loc = ((BlockCommandSender) sender).getBlock().getLocation().add(0.5, 0, 0.5);
 		} else if (sender instanceof CommandMinecart) {
 			loc = ((CommandMinecart) sender).getLocation();
 		}
@@ -83,7 +84,7 @@ public class CommandUtils {
 					ents[0] = (Entity) sender;
 				}
 			} else {
-
+				return null;
 			}
 			return ents;
 		} else if (arg.startsWith("@a")) {
@@ -207,10 +208,7 @@ public class CommandUtils {
 			}
 			ents[0] = validEntities.get(r.nextInt(validEntities.size()));
 		} else {
-			ents = new Entity[1];
-			@SuppressWarnings("deprecation") /* Not storing player */
-					Player tmp = Bukkit.getPlayer(arg);
-			ents[0] = tmp;
+			ents = new Entity[]{Bukkit.getPlayer(arg)};
 		}
 		return ents;
 	}
@@ -282,6 +280,10 @@ public class CommandUtils {
 	}
 
 	private static boolean canBeAccepted(String arg, Entity e, Location loc) {
+		if (hasTag(SelectorType.X_ROTATION, arg) && isWithinYaw(arg, e))
+			return true;
+		if (hasTag(SelectorType.Y_ROTATION, arg) && isWithinPitch(arg, e))
+			return true;
 		if (hasTag(SelectorType.TYPE, arg) && isType(arg, e))
 			return true;
 		if (hasTag(SelectorType.NAME, arg) && isName(arg, e))
@@ -424,7 +426,7 @@ public class CommandUtils {
 	}
 
 	private static World getW(String arg) {
-		return Bukkit.getWorld(getString(arg)/* arg.replace("!", "").split("=")[1] */);
+		return Bukkit.getWorld(getString(arg));
 	}
 
 	private static String getScoreMinName(String arg) {
@@ -439,11 +441,11 @@ public class CommandUtils {
 		return arg.toLowerCase().replace("!", "").split("=")[1];
 	}
 
-	private static int getScoreMin(String arg) {
-		return Integer.parseInt(arg.replace("!", "").split("=")[1]);
+	private static float getValueAsFloat(String arg) {
+		return Float.parseFloat(arg.replace("!", "").split("=")[1]);
 	}
 
-	private static int getScore(String arg) {
+	private static int getValueAsInteger(String arg) {
 		return Integer.parseInt(arg.replace("!", "").split("=")[1]);
 	}
 
@@ -508,6 +510,16 @@ public class CommandUtils {
 		return false;
 	}
 
+	private static boolean isWithinPitch(String arg, Entity e) {
+		float pitch = getValueAsFloat(arg);
+		return isWithinDoubleValue(isInverted(arg), arg, e.getLocation().getPitch());
+	}
+
+	private static boolean isWithinYaw(String arg, Entity e) {
+		float pitch = getValueAsFloat(arg);
+		return isWithinDoubleValue(isInverted(arg), arg, e.getLocation().getYaw());
+	}
+
 	private static boolean isWithinDistance(String arg, Location start, Entity e) {
 		double distanceMin = 0;
 		double distanceMax = Double.MAX_VALUE;
@@ -557,7 +569,7 @@ public class CommandUtils {
 			return false;
 		for (Objective o : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 			if (o.getName().equalsIgnoreCase(getScoreName(arg))) {
-				if ((o.getScore(((Player) e).getName()).getScore() <= getScore(arg) != isInverted(arg)))
+				if ((o.getScore(((Player) e).getName()).getScore() <= getValueAsInteger(arg) != isInverted(arg)))
 					return true;
 			}
 		}
@@ -574,7 +586,7 @@ public class CommandUtils {
 
 			for (Objective o : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 				if (o.getName().equalsIgnoreCase(name)) {
-					if (!isWithinIntValue(isInverted(arg), s[1], o.getScore(e.getName()).getScore()))
+					if (!isWithinDoubleValue(isInverted(arg), s[1], o.getScore(e.getName()).getScore()))
 						return false;
 				}
 			}
@@ -595,7 +607,7 @@ public class CommandUtils {
 			return false;
 		for (Objective o : Bukkit.getScoreboardManager().getMainScoreboard().getObjectives()) {
 			if (o.getName().equalsIgnoreCase(getScoreMinName(arg))) {
-				if ((o.getScore(((Player) e).getName()).getScore() >= getScoreMin(arg) != isInverted(arg)))
+				if ((o.getScore(((Player) e).getName()).getScore() >= getValueAsInteger(arg) != isInverted(arg)))
 					return true;
 			}
 		}
@@ -641,7 +653,6 @@ public class CommandUtils {
 	private static boolean isLM(String arg, Entity e) {
 		if (e instanceof Player) {
 			return isGreaterThan(arg, ((Player) e).getTotalExperience());
-
 		}
 		return false;
 	}
@@ -707,10 +718,6 @@ public class CommandUtils {
 	public static String getString(String arg) {
 		return arg.split("=")[1].replaceAll("!", "");
 	}
-	/*
-	 * private static double getDouble(String arg) { double mult =
-	 * Double.parseDouble(arg.split("=")[1]); return mult; }
-	 */
 
 	private static boolean isLessThan(String arg, double value) {
 		boolean inverted = isInverted(arg);
@@ -724,7 +731,7 @@ public class CommandUtils {
 		return (value > mult) != inverted;
 	}
 
-	private static boolean isWithinIntValue(boolean inverted, String arg, double value) {
+	private static boolean isWithinDoubleValue(boolean inverted, String arg, double value) {
 		double min = -Double.MAX_VALUE;
 		double max = Double.MAX_VALUE;
 		if (arg.contains("..")) {
@@ -750,7 +757,7 @@ public class CommandUtils {
 		LEVEL("level="), DISTANCE("distance="), TYPE("type="), NAME("name="), TEAM("team="), LMax("lm="), L(
 				"l="), World("w="), m("m="), C("c="), HM("hm="), H("h="), RM("rm="), RYM("rym="), RX("rx="), SCORE_FULL(
 				"score="), SCORE_MIN("score_min"), SCORE_13(
-				"scores="), R("r="), RXM("rxm="), RY("ry="), TAG("tag="), X("x="), Y("y="), Z("z="), LIMIT("limit=");
+				"scores="), R("r="), RXM("rxm="), RY("ry="), TAG("tag="), X("x="), Y("y="), Z("z="), LIMIT("limit="), Y_ROTATION("y_rotation"), X_ROTATION("x_rotation");
 		String name;
 
 		SelectorType(String s) {
