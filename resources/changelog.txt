@@ -1,3 +1,6 @@
+1.0.14
+    Added /psudoUUID for getting the uuid of entities
+
 1.0.13
     Added [x_rotation] and [y_rotation]
     Optimized code

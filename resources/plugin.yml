@@ -9,9 +9,12 @@ commands:
     description: Issues another command, as the console, supporting the base-minecraft @ function.
   psudoAs:
     description: Issues another command, as the player specified, supporting the base-minecraft @ function.
+  psudoUUID:
+    description: Issues another command, as the player specified, supporting the base-minecraft @ function, except it returns the entities uuid.
 permissions:
    psudocommand.*:
      description: Gives access to all Psudo commands
      children:
        psudocommand.psudo: true
        psudocommand.psudoas: true
+       psudocommand.psudouuid: true

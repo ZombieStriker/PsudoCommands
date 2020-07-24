@@ -28,7 +28,10 @@ public class Main extends JavaPlugin {
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label2, String[] args) {
 		boolean psudoAs = command.getName().equalsIgnoreCase("psudoas");
-		if ((!psudoAs && sender.hasPermission("psudocommand.psudo"))
+		boolean psudoUUID = command.getName().equals("psudoUUID");
+		boolean psudo = command.getName().equals("psudo");
+		if ((psudoUUID && sender.hasPermission("psudocommand.psudouuid"))
+				|| (psudo && sender.hasPermission("psudocommand.psudo"))
 				|| (psudoAs && sender.hasPermission("psudocommand.psudoas"))) {
 			CommandSender[] senders = new CommandSender[1];
 			if (args.length <= (psudoAs ? 1 : 0)) {
@@ -81,7 +84,11 @@ public class Main extends JavaPlugin {
 									works = false;
 									break;
 								}
-								sb.append((e[j].getCustomName() != null ? e[j].getCustomName() : e[j].getName()));
+								if (psudo || psudoAs) {
+									sb.append((e[j].getCustomName() != null ? e[j].getCustomName() : e[j].getName()));
+								} else if (psudoUUID) {
+									sb.append(e[j].getUniqueId().toString());
+								}
 								if (i + 1 < args.length) {
 									sb.append(" ");
 								}
