@@ -2,15 +2,17 @@ main: me.zombie_striker.psudocommands.Main
 version: ${project.version}
 name: PsudoCommand
 api-version: 1.13
-author:
-   Zombie_Striker
+author: [Zombie_Striker]
 commands:
   psudo:
     description: Issues another command, as the console, supporting the base-minecraft @ function.
+    permission: psudocommand.psudo
   psudoAs:
     description: Issues another command, as the player specified, supporting the base-minecraft @ function.
+    permission: psudocommand.psudoas
   psudoUUID:
     description: Issues another command, as the player specified, supporting the base-minecraft @ function, except it returns the entities uuid.
+    permission: psudocommand.psudouuid
 permissions:
    psudocommand.*:
      description: Gives access to all Psudo commands
